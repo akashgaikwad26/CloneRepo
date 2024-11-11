@@ -1,4 +1,4 @@
-name: Sync Multiple Public Repos
+name: Sync Single Public Repo
 
 on:
   schedule:
@@ -10,37 +10,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up repositories list
+      - name: Set up repository URLs
         env:
-          REPO_URLS: '["https://github.com/pallasite99/rental-reminder"]'
-          MY_REPO_URLS: '["https://github.com/akashgaikwad26/CloneRepo"]'
-        run: echo "Repositories list set up."
+          PUBLIC_REPO_URL: "https://github.com/pallasite99/rental-reminder"
+          TARGET_REPO_URL: "https://github.com/akashgaikwad26/CloneRepo"
+        run: echo "Repository URLs set up."
 
-      - name: Clone and Sync Repositories
+      - name: Clone and Sync Repository
         run: |
-          # Print the environment variables for debugging
-          echo "REPO_URLS: $REPO_URLS"
-          echo "MY_REPO_URLS: $MY_REPO_URLS"
+          # Set variables for public and target repositories
+          public_repo_url="$PUBLIC_REPO_URL"
+          target_repo_url="$TARGET_REPO_URL"
 
-          # Convert JSON arrays into bash arrays, only if they are non-empty
-          if [ -n "$REPO_URLS" ] && [ -n "$MY_REPO_URLS" ]; then
-            # Convert the JSON arrays into bash arrays using jq
-            repo_urls=($(echo "$REPO_URLS" | jq -r '.[]'))
-            my_repo_urls=($(echo "$MY_REPO_URLS" | jq -r '.[]'))
+          echo "Syncing $public_repo_url to $target_repo_url"
 
-            echo "Repositories to sync: ${repo_urls[@]}"
-            echo "Target repositories: ${my_repo_urls[@]}"
-
-            # Loop through each pair of repositories
-            for i in "${!repo_urls[@]}"; do
-              public_repo_url="${repo_urls[$i]}"
-              my_repo_url="${my_repo_urls[$i]}"
-
-              echo "Syncing $public_repo_url to $my_repo_url"
-
-              # Add your sync logic here...
-
-            done
+          # Clone the public repo as a mirror
+          if git clone --mirror "$public_repo_url" temp_repo.git; then
+            cd temp_repo.git
+            
+            # Add and push to the target repo
+            git remote add target "$target_repo_url"
+            git fetch origin
+            git push --mirror target || echo "Warning: Push to $target_repo_url failed."
+            
+            cd ..
+            rm -rf temp_repo.git
           else
-            echo "Error: REPO_URLS or MY_REPO_URLS is not set correctly."
+            echo "Error: Cloning $public_repo_url failed, skipping."
           fi
