@@ -13,7 +13,7 @@ jobs:
       - name: Set up repository URLs
         env:
           PUBLIC_REPO_URL: "https://github.com/pallasite99/rental-reminder"
-          TARGET_REPO_URL: "https://github.com/akashgaikwad26/CloneRepo"
+          TARGET_REPO_URL: "https://${{ secrets.GITHUB_TOKEN }}@github.com/akashgaikwad26/CloneRepo"
         run: echo "Repository URLs set up."
 
       - name: Clone and Sync Repository
