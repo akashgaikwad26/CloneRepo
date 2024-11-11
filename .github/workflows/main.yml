@@ -12,9 +12,9 @@ jobs:
     steps:
       - name: Clone and Sync Repository
         run: |
-          # Define the source (public) and target (public) repositories directly in the script
+          # Define the source and target repositories, using `GITHUB_TOKEN` for authentication on the target
           public_repo_url="https://github.com/pallasite99/rental-reminder"
-          target_repo_url="https://github.com/akashgaikwad26/CloneRepo"
+          target_repo_url="https://${{ secrets.GITHUB_TOKEN }}@github.com/akashgaikwad26/CloneRepo"
 
           echo "Syncing $public_repo_url to $target_repo_url"
 
@@ -22,7 +22,7 @@ jobs:
           if git clone --mirror "$public_repo_url" temp_repo.git; then
             cd temp_repo.git
             
-            # Add and push to the target repo (no authentication needed for public repos)
+            # Add and push to the target repo (authenticated using GITHUB_TOKEN)
             git remote add target "$target_repo_url"
             git fetch origin
             git push --mirror target || echo "Warning: Push to $target_repo_url failed."
