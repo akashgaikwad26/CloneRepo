@@ -12,34 +12,29 @@ jobs:
     steps:
       - name: Set up repository URLs
         env:
-          PUBLIC_REPO_URL: "https://github.com/pallasite99/rental-reminder"   # Source repo
-          TARGET_REPO_URL: "https://github.com/akashgaikwad26/CloneRepo"       # Target public repo
-        run: |
-          echo "Public Repository URL: $PUBLIC_REPO_URL"
-          echo "Target Repository URL: $TARGET_REPO_URL"
-          echo "Repository URLs set up."
+          PUBLIC_REPO_URL: "https://github.com/pallasite99/rental-reminder"
+          TARGET_REPO_URL: "https://github.com/akashgaikwad26/CloneRepo"
+        run: echo "Repository URLs set up."
 
       - name: Clone and Sync Repository
         run: |
-          # Check that URLs are not empty
-          if [ -z "$PUBLIC_REPO_URL" ] || [ -z "$TARGET_REPO_URL" ]; then
-            echo "Error: PUBLIC_REPO_URL or TARGET_REPO_URL is not set correctly."
-            exit 1
-          fi
+          # Set variables for public and target repositories
+          public_repo_url="$PUBLIC_REPO_URL"
+          target_repo_url="$TARGET_REPO_URL"
 
-          echo "Syncing $PUBLIC_REPO_URL to $TARGET_REPO_URL"
+          echo "Syncing $public_repo_url to $target_repo_url"
 
           # Clone the public repo as a mirror
-          if git clone --mirror "$PUBLIC_REPO_URL" temp_repo.git; then
+          if git clone --mirror "$public_repo_url" temp_repo.git; then
             cd temp_repo.git
             
-            # Add and push to the target repo (no authentication needed for public repos)
-            git remote add target "$TARGET_REPO_URL"
+            # Add and push to the target repo
+            git remote add target "$target_repo_url"
             git fetch origin
-            git push --mirror target || echo "Warning: Push to $TARGET_REPO_URL failed."
+            git push --mirror target || echo "Warning: Push to $target_repo_url failed."
             
             cd ..
             rm -rf temp_repo.git
           else
-            echo "Error: Cloning $PUBLIC_REPO_URL failed, skipping."
+            echo "Error: Cloning $public_repo_url failed, skipping."
           fi
