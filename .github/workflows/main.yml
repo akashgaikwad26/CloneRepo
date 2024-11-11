@@ -10,17 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up repository URLs
-        env:
-          PUBLIC_REPO_URL: "https://github.com/pallasite99/rental-reminder"
-          TARGET_REPO_URL: "https://github.com/akashgaikwad26/CloneRepo"
-        run: echo "Repository URLs set up."
-
       - name: Clone and Sync Repository
         run: |
-          # Set variables for public and target repositories
-          public_repo_url="$PUBLIC_REPO_URL"
-          target_repo_url="$TARGET_REPO_URL"
+          # Define the source (public) and target (public) repositories directly in the script
+          public_repo_url="https://github.com/pallasite99/rental-reminder"
+          target_repo_url="https://github.com/akashgaikwad26/CloneRepo"
 
           echo "Syncing $public_repo_url to $target_repo_url"
 
@@ -28,7 +22,7 @@ jobs:
           if git clone --mirror "$public_repo_url" temp_repo.git; then
             cd temp_repo.git
             
-            # Add and push to the target repo
+            # Add and push to the target repo (no authentication needed for public repos)
             git remote add target "$target_repo_url"
             git fetch origin
             git push --mirror target || echo "Warning: Push to $target_repo_url failed."
