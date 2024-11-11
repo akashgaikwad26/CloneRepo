@@ -18,32 +18,41 @@ jobs:
             https://github.com/akashgaikwad26/CloneRepo
         run: echo "Repositories list set up."
 
-      - name: Clone and Sync Repositories
-        env:
-          REPO_URLS: ${{ toJSON(env.REPO_URLS) }}
-          MY_REPO_URLS: ${{ toJSON(env.MY_REPO_URLS) }}
+      - name: Set up SSH key
         run: |
-          # Convert JSON arrays into bash arrays
-          repo_urls=($(echo "$REPO_URLS" | jq -r '.[]'))
-          my_repo_urls=($(echo "$MY_REPO_URLS" | jq -r '.[]'))
+          # Create the .ssh directory
+          mkdir -p ~/.ssh
+          
+          # Add the SSH private key to the SSH agent
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Add GitHub to known hosts to prevent SSH from asking to verify the host
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Clone and Sync Repositories
+        run: |
+          # Convert newline-separated list into bash arrays
+          repo_urls=($REPO_URLS)
+          my_repo_urls=($MY_REPO_URLS)
 
           # Loop through each pair of repositories
           for i in "${!repo_urls[@]}"; do
             public_repo_url="${repo_urls[$i]}"
             my_repo_url="${my_repo_urls[$i]}"
 
-            # Use the token for authentication
-            auth_public_repo_url="${public_repo_url/https:\/\//https:\/\/${{ secrets.GITHUB_TOKEN }}@}"
-            auth_my_repo_url="${my_repo_url/https:\/\//https:\/\/${{ secrets.GITHUB_TOKEN }}@}"
-
             echo "Syncing $public_repo_url to $my_repo_url"
 
+            # Convert URL to SSH format
+            ssh_public_repo_url="${public_repo_url/https:\/\/github.com\//git@github.com:}"
+            ssh_my_repo_url="${my_repo_url/https:\/\/github.com\//git@github.com:}"
+
             # Clone the public repo as a mirror
-            if git clone --mirror "$auth_public_repo_url" temp_repo.git; then
+            if git clone --mirror "$ssh_public_repo_url" temp_repo.git; then
               cd temp_repo.git
               
-              # Add and push to the private repo
-              git remote add my-repo "$auth_my_repo_url"
+              # Add and push to the private repo using SSH
+              git remote add my-repo "$ssh_my_repo_url"
               git fetch origin
               git push --mirror my-repo || echo "Warning: Push to $my_repo_url failed."
               
