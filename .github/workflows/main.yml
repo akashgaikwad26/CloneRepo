@@ -10,25 +10,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clone and Sync Repository
+      - name: Checkout and Setup
         run: |
-          # Define the source and target repositories, using `GITHUB_TOKEN` for authentication on the target
-          public_repo_url="https://github.com/pallasite99/rental-reminder"
-          target_repo_url="https://${{ secrets.GITHUB_TOKEN }}@github.com/akashgaikwad26/CloneRepo"
+          # Define repository URLs with authentication for target repo
+          export PUBLIC_REPO_URL="https://github.com/pallasite99/rental-reminder"
+          export TARGET_REPO_URL="https://${{ secrets.GITHUB_TOKEN }}@github.com/akashgaikwad26/CloneRepo"
+          
+          echo "Public Repository URL: $PUBLIC_REPO_URL"
+          echo "Target Repository URL: $TARGET_REPO_URL"
 
-          echo "Syncing $public_repo_url to $target_repo_url"
+      - name: Clone and Sync Repository
+        env:
+          PUBLIC_REPO_URL: "https://github.com/pallasite99/rental-reminder"
+          TARGET_REPO_URL: "https://${{ secrets.GITHUB_TOKEN }}@github.com/akashgaikwad26/CloneRepo"
+        run: |
+          # Ensure URLs are correctly set
+          if [ -z "$PUBLIC_REPO_URL" ] || [ -z "$TARGET_REPO_URL" ]; then
+            echo "Error: Repository URLs are not set correctly."
+            exit 1
+          fi
+
+          echo "Syncing $PUBLIC_REPO_URL to $TARGET_REPO_URL"
 
           # Clone the public repo as a mirror
-          if git clone --mirror "$public_repo_url" temp_repo.git; then
+          if git clone --mirror "$PUBLIC_REPO_URL" temp_repo.git; then
             cd temp_repo.git
             
-            # Add and push to the target repo (authenticated using GITHUB_TOKEN)
-            git remote add target "$target_repo_url"
+            # Add and push to the target repo (using GITHUB_TOKEN for authentication)
+            git remote add target "$TARGET_REPO_URL"
             git fetch origin
-            git push --mirror target || echo "Warning: Push to $target_repo_url failed."
+            git push --mirror target || echo "Warning: Push to $TARGET_REPO_URL failed."
             
             cd ..
             rm -rf temp_repo.git
           else
-            echo "Error: Cloning $public_repo_url failed, skipping."
+            echo "Error: Cloning $PUBLIC_REPO_URL failed, skipping."
           fi
