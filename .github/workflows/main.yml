@@ -10,31 +10,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out Target Repository
-        uses: actions/checkout@v2
-        with:
-          repository: "akashgaikwad26/CloneRepo"  # Target repository
-          token: "${{ secrets.GITHUB_TOKEN }}"
-          path: "target_repo"  # Clone into a specific directory
-
-      - name: Clone and Sync Public Repository
+      - name: Clone and Sync Repository
+        env:
+          PUBLIC_REPO_URL: "https://github.com/pallasite99/rental-reminder"
+          TARGET_REPO_URL: "https://${{ secrets.PAT_TOKEN }}@github.com/akashgaikwad26/CloneRepo"
         run: |
-          # Define the public repository URL
-          public_repo_url="https://github.com/pallasite99/rental-reminder"
-          
-          echo "Syncing $public_repo_url to target_repo"
+          # Ensure URLs are correctly set
+          if [ -z "$PUBLIC_REPO_URL" ] || [ -z "$TARGET_REPO_URL" ]; then
+            echo "Error: Repository URLs are not set correctly."
+            exit 1
+          fi
+
+          echo "Syncing $PUBLIC_REPO_URL to $TARGET_REPO_URL"
 
           # Clone the public repo as a mirror
-          if git clone --mirror "$public_repo_url" temp_repo.git; then
+          if git clone --mirror "$PUBLIC_REPO_URL" temp_repo.git; then
             cd temp_repo.git
             
-            # Add the target repo (cloned into target_repo) as a remote
-            git remote add target ../target_repo
+            # Add and push to the target repo (using PAT_TOKEN for authentication)
+            git remote add target "$TARGET_REPO_URL"
             git fetch origin
-            git push --mirror target || echo "Warning: Push to target_repo failed."
+            git push --mirror target || echo "Warning: Push to $TARGET_REPO_URL failed."
             
             cd ..
             rm -rf temp_repo.git
           else
-            echo "Error: Cloning $public_repo_url failed, skipping."
+            echo "Error: Cloning $PUBLIC_REPO_URL failed, skipping."
           fi
